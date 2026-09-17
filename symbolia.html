@@ -39,6 +39,8 @@ body{font-family:Arial,sans-serif;font-size:14px;color:#222;background:#f5f5f5;p
 .btn-warning:hover{background:#e0a800}
 .btn-danger{background:#fff;color:#dc3545;border-color:#dc3545}
 .btn-danger:hover{background:#fff5f5}
+.btn-renew{background:#fff;color:#0066cc;border-color:#0066cc}
+.btn-renew:hover{background:#e8f0fe}
 select.filter{padding:7px 10px;border:1px solid #ccc;border-radius:7px;font-size:13px;background:#fff;color:#222}
 .table-wrap{overflow-x:auto;background:#fff;border-radius:10px;border:1px solid #e0e0e0}
 table{width:100%;border-collapse:collapse;min-width:950px}
@@ -51,10 +53,12 @@ tr:last-child td{border-bottom:none}
 tr:hover td{background:#fafafa}
 tr.expiring-soon td{background:#fffbeb}
 tr.expired td{background:#fff5f5}
+tr.archived td{background:#f8f8f8;opacity:0.8}
 .tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600}
 .tag-green{background:#d1fae5;color:#065f46}
 .tag-red{background:#fee2e2;color:#991b1b}
 .tag-amber{background:#fef3c7;color:#92400e}
+.tag-gray{background:#e5e7eb;color:#374151}
 .total-cell{font-weight:700;color:#1a1a1a;font-size:14px}
 .note-cell{font-size:12px;color:#666;font-style:italic}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
@@ -91,7 +95,7 @@ textarea{resize:vertical;min-height:70px}
   </div>
 
   <div class="stats">
-    <div class="stat"><div class="stat-label">Ενεργά συμβόλαια</div><div class="stat-value" id="stat-total">0</div></div>
+    <div class="stat"><div class="stat-label">Σύνολο καταγραφής</div><div class="stat-value" id="stat-total">0</div></div>
     <div class="stat"><div class="stat-label">Σύνολο προμηθειών</div><div class="stat-value" id="stat-prom">0 €</div></div>
     <div class="stat"><div class="stat-label">Σύνολο μεικτών</div><div class="stat-value" id="stat-meikta">0 €</div></div>
     <div class="stat highlight"><div class="stat-label">Πληρώνουν πελάτες</div><div class="stat-value" id="stat-pelates">0 €</div></div>
@@ -110,7 +114,7 @@ textarea{resize:vertical;min-height:70px}
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="setTab('all')">Όλα</button>
+    <button class="tab active" onclick="setTab('all')">📋 Καταγραφή</button>
     <button class="tab" onclick="setTab('expiring')">⚠️ Λήγουν σύντομα</button>
     <button class="tab" onclick="setTab('expired')">❌ Ληγμένα</button>
   </div>
@@ -160,7 +164,6 @@ textarea{resize:vertical;min-height:70px}
 <div class="modal-bg" id="modal-bg">
   <div class="modal">
     <h2 id="modal-title">Νέο συμβόλαιο</h2>
-
     <div class="form-row">
       <div><label>Ημερομηνία έναρξης</label><input type="date" id="f-date"></div>
       <div><label>Διάρκεια</label>
@@ -176,12 +179,10 @@ textarea{resize:vertical;min-height:70px}
       <div><label>Αρ. Κυκλοφορίας / Είδος ΣΛ</label><input type="text" id="f-eid" placeholder="πχ. ΑΒ1234 ή Νοσοκομειακό"></div>
       <div><label>Πελάτης (+ σχόλιο)</label><input type="text" id="f-pelatis" placeholder="πχ. Παπαδόπουλος (VIP)"></div>
     </div>
-
     <div class="form-section">
       <div class="form-section-title">🏢 Εταιρία 1</div>
       <div class="form-row full">
-        <div>
-          <label>Εταιρία</label>
+        <div><label>Εταιρία</label>
           <div class="autocomplete-wrap">
             <input type="text" id="f-et1" placeholder="πχ. INTERAMERICAN" oninput="showAuto('f-et1','auto1')" autocomplete="off">
             <div class="autocomplete-list" id="auto1" style="display:none"></div>
@@ -194,12 +195,10 @@ textarea{resize:vertical;min-height:70px}
         <div><label>Μεικτά €</label><input type="number" id="f-m1" placeholder="0" oninput="calcTotal()"></div>
       </div>
     </div>
-
     <div class="form-section">
       <div class="form-section-title">🏢 Εταιρία 2 (προαιρετικά)</div>
       <div class="form-row full">
-        <div>
-          <label>Εταιρία</label>
+        <div><label>Εταιρία</label>
           <div class="autocomplete-wrap">
             <input type="text" id="f-et2" placeholder="πχ. ΑΛΦΑ" oninput="showAuto('f-et2','auto2')" autocomplete="off">
             <div class="autocomplete-list" id="auto2" style="display:none"></div>
@@ -212,12 +211,10 @@ textarea{resize:vertical;min-height:70px}
         <div><label>Μεικτά €</label><input type="number" id="f-m2" placeholder="0" oninput="calcTotal()"></div>
       </div>
     </div>
-
     <div class="total-preview">
       <span class="total-preview-label">✅ Σύνολο που πληρώνει ο πελάτης:</span>
       <span class="total-preview-value" id="modal-total">0.00 €</span>
     </div>
-
     <div class="form-section">
       <div class="form-row">
         <div><label>Εξτρα μπόνους €</label><input type="number" id="f-bonus" placeholder="0" oninput="calcTotal()"></div>
@@ -227,7 +224,6 @@ textarea{resize:vertical;min-height:70px}
         <div><label>Σημείωση</label><textarea id="f-note" placeholder="Γράψε οποιαδήποτε σημείωση θέλεις..."></textarea></div>
       </div>
     </div>
-
     <div class="modal-actions">
       <button class="btn" onclick="closeModal()">Ακύρωση</button>
       <button class="btn btn-primary" onclick="saveContract()">💾 Αποθήκευση</button>
@@ -236,6 +232,12 @@ textarea{resize:vertical;min-height:70px}
 </div>
 
 <script>
+// STATUS:
+// 'active' = καταγραφή (ενεργό)
+// 'expiring' = λήγει σύντομα (αυτόματο)
+// 'expired' = ληγμένο (αυτόματο)
+// 'renewed' = ανανεώθηκε — μένει στη λίστα ληγμένων/λήγουν σαν ιστορικό
+
 let contracts = [];
 let editIdx = -1;
 let currentTab = 'all';
@@ -254,31 +256,25 @@ function exportData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   const today = new Date().toLocaleDateString('el-GR').replace(/\//g,'-');
-  a.href = url;
-  a.download = `symbolia-backup-${today}.json`;
-  a.click();
+  a.href = url; a.download = `symbolia-backup-${today}.json`; a.click();
   URL.revokeObjectURL(url);
 }
 
 function importData(event) {
-  const file = event.target.files[0];
-  if(!file) return;
+  const file = event.target.files[0]; if(!file) return;
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
       const data = JSON.parse(e.target.result);
       if(Array.isArray(data)) {
-        if(confirm(`Θα φορτωθούν ${data.length} συμβόλαια. Τα τρέχοντα δεδομένα θα αντικατασταθούν. Συνέχεια;`)) {
-          contracts = data;
-          save();
-          render();
+        if(confirm(`Θα φορτωθούν ${data.length} συμβόλαια. Συνέχεια;`)) {
+          contracts = data; save(); render();
           alert('✅ Τα δεδομένα φορτώθηκαν επιτυχώς!');
         }
-      } else { alert('❌ Μη έγκυρο αρχείο backup.'); }
-    } catch(err) { alert('❌ Σφάλμα κατά την ανάγνωση του αρχείου.'); }
+      } else { alert('❌ Μη έγκυρο αρχείο.'); }
+    } catch(err) { alert('❌ Σφάλμα ανάγνωσης.'); }
   };
-  reader.readAsText(file);
-  event.target.value = '';
+  reader.readAsText(file); event.target.value = '';
 }
 
 function getEtairies() {
@@ -290,9 +286,8 @@ function getEtairies() {
 function showAuto(inputId, listId) {
   const val = document.getElementById(inputId).value.trim().toLowerCase();
   const list = document.getElementById(listId);
-  const etairies = getEtairies();
-  const filtered = val ? etairies.filter(e => e.toLowerCase().includes(val)) : etairies;
-  if(filtered.length === 0 || !val) { list.style.display='none'; return; }
+  const filtered = val ? getEtairies().filter(e => e.toLowerCase().includes(val)) : getEtairies();
+  if(!filtered.length || !val) { list.style.display='none'; return; }
   list.innerHTML = filtered.map(e => `<div class="autocomplete-item" onclick="selectAuto('${inputId}','${listId}','${e}')">${e}</div>`).join('');
   list.style.display = 'block';
 }
@@ -303,9 +298,8 @@ function selectAuto(inputId, listId, val) {
 }
 
 document.addEventListener('click', function(e) {
-  if(!e.target.closest('.autocomplete-wrap')) {
+  if(!e.target.closest('.autocomplete-wrap'))
     document.querySelectorAll('.autocomplete-list').forEach(l => l.style.display='none');
-  }
 });
 
 function calcTotal() {
@@ -326,13 +320,15 @@ function getExpiry(dateStr, dur) {
   return d;
 }
 
-function getStatus(c) {
+function getAutoStatus(c) {
+  // Αν έχει manually ανανεωθεί, το κρατάμε στα ληγμένα ως ιστορικό
+  if(c.renewed) return 'renewed';
   const exp = getExpiry(c.date, c.dur);
-  if(!exp) return 'ok';
+  if(!exp) return 'active';
   const diff = (exp - new Date())/(1000*60*60*24);
   if(diff < 0) return 'expired';
   if(diff <= 14) return 'expiring';
-  return 'ok';
+  return 'active';
 }
 
 function formatDate(dateStr) {
@@ -355,36 +351,29 @@ function setTab(t) {
 }
 
 function sortBy(field) {
-  if(sortField === field) sortDir = -sortDir;
-  else { sortField = field; sortDir = 1; }
-  document.querySelectorAll('th').forEach(th => th.classList.remove('sorted'));
-  const icon = document.getElementById('sort-'+field);
-  if(icon) { icon.closest('th').classList.add('sorted'); icon.textContent = sortDir===1?'↑':'↓'; }
+  if(sortField===field) sortDir=-sortDir; else{sortField=field;sortDir=1;}
+  document.querySelectorAll('th').forEach(th=>th.classList.remove('sorted'));
+  const icon=document.getElementById('sort-'+field);
+  if(icon){icon.closest('th').classList.add('sorted');icon.textContent=sortDir===1?'↑':'↓';}
   render();
 }
 
 function updateFilters() {
-  const months = new Set();
-  const etairies = new Set();
-  contracts.forEach(c => {
+  const months=new Set(), etairies=new Set();
+  contracts.forEach(c=>{
     if(c.date){const d=new Date(c.date);months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);}
-    if(c.et1) etairies.add(c.et1);
-    if(c.et2) etairies.add(c.et2);
+    if(c.et1) etairies.add(c.et1); if(c.et2) etairies.add(c.et2);
   });
-  const msel=document.getElementById('filter-month');
-  const curM=msel.value;
+  const msel=document.getElementById('filter-month'), curM=msel.value;
   msel.innerHTML='<option value="">Όλοι οι μήνες</option>';
   [...months].sort().reverse().forEach(m=>{
     const [y,mo]=m.split('-');
     const label=new Date(y,mo-1,1).toLocaleDateString('el-GR',{month:'long',year:'numeric'});
     msel.innerHTML+=`<option value="${m}" ${curM===m?'selected':''}>${label}</option>`;
   });
-  const esel=document.getElementById('filter-etairia');
-  const curE=esel.value;
+  const esel=document.getElementById('filter-etairia'), curE=esel.value;
   esel.innerHTML='<option value="">Όλες οι εταιρίες</option>';
-  [...etairies].sort().forEach(e=>{
-    esel.innerHTML+=`<option value="${e}" ${curE===e?'selected':''}>${e}</option>`;
-  });
+  [...etairies].sort().forEach(e=>{esel.innerHTML+=`<option value="${e}" ${curE===e?'selected':''}>${e}</option>`;});
 }
 
 function render() {
@@ -393,9 +382,10 @@ function render() {
   const filterEt=document.getElementById('filter-etairia').value;
 
   let list=contracts.filter(c=>{
-    const st=getStatus(c);
-    if(currentTab==='expiring'&&st!=='expiring') return false;
-    if(currentTab==='expired'&&st!=='expired') return false;
+    const st=getAutoStatus(c);
+    if(currentTab==='all' && (st==='expired'||st==='expiring'||st==='renewed')) return false;
+    if(currentTab==='expiring' && st!=='expiring') return false;
+    if(currentTab==='expired' && st!=='expired' && st!=='renewed') return false;
     if(filterMonth&&c.date){
       const d=new Date(c.date);
       const m=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -405,25 +395,22 @@ function render() {
     return true;
   });
 
-  // Sort
   list.sort((a,b)=>{
-    let av, bv;
+    let av,bv;
     if(sortField==='date'){av=a.date||'';bv=b.date||'';}
     else if(sortField==='dur'){av=a.dur||0;bv=b.dur||0;}
     else if(sortField==='eid'){av=a.eid||'';bv=b.eid||'';}
     else if(sortField==='et1'){av=a.et1||'';bv=b.et1||'';}
     else if(sortField==='pelatis'){av=a.pelatis||'';bv=b.pelatis||'';}
     else if(sortField==='total'){av=(parseFloat(a.m1)||0)+(parseFloat(a.m2)||0)+(parseFloat(a.bonus)||0);bv=(parseFloat(b.m1)||0)+(parseFloat(b.m2)||0)+(parseFloat(b.bonus)||0);}
-    else if(sortField==='status'){av=getStatus(a);bv=getStatus(b);}
+    else if(sortField==='status'){av=getAutoStatus(a);bv=getAutoStatus(b);}
     else{av='';bv='';}
-    if(av<bv) return -1*sortDir;
-    if(av>bv) return 1*sortDir;
-    return 0;
+    if(av<bv) return -1*sortDir; if(av>bv) return 1*sortDir; return 0;
   });
 
   // Month stats
-  const monthBox = document.getElementById('month-stats-box');
-  if(filterMonth) {
+  const monthBox=document.getElementById('month-stats-box');
+  if(filterMonth){
     monthBox.style.display='block';
     const [y,mo]=filterMonth.split('-');
     const label=new Date(y,mo-1,1).toLocaleDateString('el-GR',{month:'long',year:'numeric'});
@@ -433,21 +420,19 @@ function render() {
     document.getElementById('ms-meikta').textContent=list.reduce((s,c)=>s+(parseFloat(c.m1)||0)+(parseFloat(c.m2)||0),0).toFixed(2)+' €';
     document.getElementById('ms-pelates').textContent=list.reduce((s,c)=>s+(parseFloat(c.m1)||0)+(parseFloat(c.m2)||0)+(parseFloat(c.bonus)||0),0).toFixed(2)+' €';
     document.getElementById('ms-bonus').textContent=list.reduce((s,c)=>s+(parseFloat(c.bonus)||0),0).toFixed(2)+' €';
-  } else {
-    monthBox.style.display='none';
-  }
+  } else { monthBox.style.display='none'; }
 
-  const expCount=contracts.filter(c=>getStatus(c)==='expiring').length;
+  const expCount=contracts.filter(c=>getAutoStatus(c)==='expiring').length;
   const badge=document.getElementById('expiring-badge');
   if(expCount>0){badge.style.display='';badge.textContent=`⚠️ ${expCount} λήγουν σύντομα`;}
   else{badge.style.display='none';}
 
-  const active=contracts.filter(c=>getStatus(c)!=='expired');
-  document.getElementById('stat-total').textContent=active.length;
-  document.getElementById('stat-prom').textContent=active.reduce((s,c)=>s+(parseFloat(c.p1)||0)+(parseFloat(c.p2)||0),0).toFixed(2)+' €';
-  document.getElementById('stat-meikta').textContent=active.reduce((s,c)=>s+(parseFloat(c.m1)||0)+(parseFloat(c.m2)||0),0).toFixed(2)+' €';
-  document.getElementById('stat-pelates').textContent=active.reduce((s,c)=>s+(parseFloat(c.m1)||0)+(parseFloat(c.m2)||0)+(parseFloat(c.bonus)||0),0).toFixed(2)+' €';
-  document.getElementById('stat-bonus').textContent=active.reduce((s,c)=>s+(parseFloat(c.bonus)||0),0).toFixed(2)+' €';
+  const allActive=contracts.filter(c=>getAutoStatus(c)==='active');
+  document.getElementById('stat-total').textContent=allActive.length;
+  document.getElementById('stat-prom').textContent=allActive.reduce((s,c)=>s+(parseFloat(c.p1)||0)+(parseFloat(c.p2)||0),0).toFixed(2)+' €';
+  document.getElementById('stat-meikta').textContent=allActive.reduce((s,c)=>s+(parseFloat(c.m1)||0)+(parseFloat(c.m2)||0),0).toFixed(2)+' €';
+  document.getElementById('stat-pelates').textContent=allActive.reduce((s,c)=>s+(parseFloat(c.m1)||0)+(parseFloat(c.m2)||0)+(parseFloat(c.bonus)||0),0).toFixed(2)+' €';
+  document.getElementById('stat-bonus').textContent=allActive.reduce((s,c)=>s+(parseFloat(c.bonus)||0),0).toFixed(2)+' €';
 
   const tbody=document.getElementById('tbody');
   if(list.length===0){
@@ -456,10 +441,11 @@ function render() {
   }
 
   tbody.innerHTML=list.map(c=>{
-    const st=getStatus(c);
-    const rowClass=st==='expired'?'expired':st==='expiring'?'expiring-soon':'';
+    const st=getAutoStatus(c);
+    const rowClass=st==='expired'?'expired':st==='expiring'?'expiring-soon':st==='renewed'?'archived':'';
     const tag=st==='expired'?'<span class="tag tag-red">Ληγμένο</span>':
                st==='expiring'?'<span class="tag tag-amber">⚠️ Λήγει σύντομα</span>':
+               st==='renewed'?'<span class="tag tag-gray">Ανανεώθηκε</span>':
                '<span class="tag tag-green">✅ Ενεργό</span>';
     const realIdx=contracts.indexOf(c);
     const etairia=[c.et1,c.et2].filter(Boolean).join(' / ');
@@ -470,6 +456,10 @@ function render() {
     if(c.m2) mLines.push(`${c.et2||'Εταιρία 2'}: ${parseFloat(c.m2).toFixed(2)}€`);
     const mDisplay=mLines.length?`<span class="two-lines">${mLines.join('<br>')}</span>`:'—';
     const totalM=(parseFloat(c.m1)||0)+(parseFloat(c.m2)||0)+(parseFloat(c.bonus)||0);
+
+    // Renew button για expired και expiring
+    const renewBtn = (st==='expired'||st==='expiring') ?
+      `<button class="btn btn-renew" style="padding:5px 9px;font-size:12px" onclick="renewContract(${realIdx})" title="Ανανέωση">🔄</button>` : '';
 
     return `<tr class="${rowClass}">
       <td>${formatDate(c.date)}<div class="expiry-date">Λήξη: ${formatExpiry(c)}</div></td>
@@ -484,10 +474,10 @@ function render() {
       <td>${c.bonus?parseFloat(c.bonus).toFixed(2)+'€':'—'}</td>
       <td class="note-cell">${c.note||'—'}</td>
       <td>${tag}</td>
-      <td style="white-space:nowrap">
+      <td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap">
+        ${renewBtn}
         <button class="btn" style="padding:5px 9px;font-size:12px" onclick="editContract(${realIdx})">✏️</button>
-        <button class="btn" style="padding:5px 9px;font-size:12px;margin-left:4px;color:#0066cc;border-color:#0066cc" onclick="renewContract(${realIdx})">🔄</button>
-        <button class="btn btn-danger" style="padding:5px 9px;font-size:12px;margin-left:4px" onclick="deleteContract(${realIdx})">🗑️</button>
+        <button class="btn btn-danger" style="padding:5px 9px;font-size:12px" onclick="deleteContract(${realIdx})">🗑️</button>
       </td>
     </tr>`;
   }).join('');
@@ -536,43 +526,40 @@ function saveContract(){
   };
   if(editIdx===-1) contracts.push(c);
   else contracts[editIdx]=c;
-  save();
-  closeModal();
-  render();
+  save(); closeModal(); render();
 }
 
 function editContract(idx){openModal(idx);}
 
 function renewContract(idx) {
   const c = contracts[idx];
-  const newC = {...c};
-  // Set new date to today
-  newC.date = new Date().toISOString().split("T")[0];
+  // Ανοίγει φόρμα με αντιγραμμένα στοιχεία
   editIdx = -1;
-  document.getElementById("modal-title").textContent = "🔄 Ανανέωση συμβολαίου";
-  document.getElementById("f-date").value = newC.date;
-  document.getElementById("f-dur").value = newC.dur||1;
-  document.getElementById("f-eid").value = newC.eid||"";
-  document.getElementById("f-pelatis").value = newC.pelatis||"";
-  document.getElementById("f-et1").value = newC.et1||"";
-  document.getElementById("f-k1").value = newC.k1||"";
-  document.getElementById("f-p1").value = newC.p1||"";
-  document.getElementById("f-m1").value = newC.m1||"";
-  document.getElementById("f-et2").value = newC.et2||"";
-  document.getElementById("f-k2").value = newC.k2||"";
-  document.getElementById("f-p2").value = newC.p2||"";
-  document.getElementById("f-m2").value = newC.m2||"";
-  document.getElementById("f-bonus").value = newC.bonus||"";
-  document.getElementById("f-note").value = newC.note||"";
+  document.getElementById('modal-title').textContent = '🔄 Ανανέωση συμβολαίου';
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-dur').value = c.dur||1;
+  document.getElementById('f-eid').value = c.eid||'';
+  document.getElementById('f-pelatis').value = c.pelatis||'';
+  document.getElementById('f-et1').value = c.et1||'';
+  document.getElementById('f-k1').value = c.k1||'';
+  document.getElementById('f-p1').value = c.p1||'';
+  document.getElementById('f-m1').value = c.m1||'';
+  document.getElementById('f-et2').value = c.et2||'';
+  document.getElementById('f-k2').value = c.k2||'';
+  document.getElementById('f-p2').value = c.p2||'';
+  document.getElementById('f-m2').value = c.m2||'';
+  document.getElementById('f-bonus').value = c.bonus||'';
+  document.getElementById('f-note').value = c.note||'';
   calcTotal();
-  document.getElementById("modal-bg").classList.add("open");
+  // Σημειώνουμε το παλιό ως ανανεωμένο
+  contracts[idx].renewed = true;
+  save();
+  document.getElementById('modal-bg').classList.add('open');
 }
 
 function deleteContract(idx){
   if(confirm('Διαγραφή συμβολαίου;')){
-    contracts.splice(idx,1);
-    save();
-    render();
+    contracts.splice(idx,1); save(); render();
   }
 }
 
