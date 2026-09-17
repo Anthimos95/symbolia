@@ -486,6 +486,7 @@ function render() {
       <td>${tag}</td>
       <td style="white-space:nowrap">
         <button class="btn" style="padding:5px 9px;font-size:12px" onclick="editContract(${realIdx})">✏️</button>
+        <button class="btn" style="padding:5px 9px;font-size:12px;margin-left:4px;color:#0066cc;border-color:#0066cc" onclick="renewContract(${realIdx})">🔄</button>
         <button class="btn btn-danger" style="padding:5px 9px;font-size:12px;margin-left:4px" onclick="deleteContract(${realIdx})">🗑️</button>
       </td>
     </tr>`;
@@ -541,6 +542,31 @@ function saveContract(){
 }
 
 function editContract(idx){openModal(idx);}
+
+function renewContract(idx) {
+  const c = contracts[idx];
+  const newC = {...c};
+  // Set new date to today
+  newC.date = new Date().toISOString().split("T")[0];
+  editIdx = -1;
+  document.getElementById("modal-title").textContent = "🔄 Ανανέωση συμβολαίου";
+  document.getElementById("f-date").value = newC.date;
+  document.getElementById("f-dur").value = newC.dur||1;
+  document.getElementById("f-eid").value = newC.eid||"";
+  document.getElementById("f-pelatis").value = newC.pelatis||"";
+  document.getElementById("f-et1").value = newC.et1||"";
+  document.getElementById("f-k1").value = newC.k1||"";
+  document.getElementById("f-p1").value = newC.p1||"";
+  document.getElementById("f-m1").value = newC.m1||"";
+  document.getElementById("f-et2").value = newC.et2||"";
+  document.getElementById("f-k2").value = newC.k2||"";
+  document.getElementById("f-p2").value = newC.p2||"";
+  document.getElementById("f-m2").value = newC.m2||"";
+  document.getElementById("f-bonus").value = newC.bonus||"";
+  document.getElementById("f-note").value = newC.note||"";
+  calcTotal();
+  document.getElementById("modal-bg").classList.add("open");
+}
 
 function deleteContract(idx){
   if(confirm('Διαγραφή συμβολαίου;')){
