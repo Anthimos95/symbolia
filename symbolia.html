@@ -361,7 +361,11 @@ function sortBy(field) {
 function updateFilters() {
   const months=new Set(), etairies=new Set();
   contracts.forEach(c=>{
-    if(c.date){const d=new Date(c.date);months.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);}
+    if(c.date){
+      const st=getAutoStatus(c);
+      let mDate = new Date(c.date);
+      if((currentTab==='expiring'||currentTab==='expired')&&getExpiry(c.date,c.dur)) mDate=getExpiry(c.date,c.dur);
+      months.add(`${mDate.getFullYear()}-${String(mDate.getMonth()+1).padStart(2,'0')}`);}
     if(c.et1) etairies.add(c.et1); if(c.et2) etairies.add(c.et2);
   });
   const msel=document.getElementById('filter-month'), curM=msel.value;
@@ -387,8 +391,13 @@ function render() {
     if(currentTab==='expiring' && st!=='expiring') return false;
     if(currentTab==='expired' && st!=='expired' && st!=='renewed') return false;
     if(filterMonth&&c.date){
-      const d=new Date(c.date);
-      const m=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      let filterDate = c.date;
+      if(currentTab==='expiring'||currentTab==='expired') {
+        const exp = getExpiry(c.date, c.dur);
+        if(exp) filterDate = exp.toISOString().split('T')[0];
+      }
+      const fd=new Date(filterDate);
+      const m=`${fd.getFullYear()}-${String(fd.getMonth()+1).padStart(2,'0')}`;
       if(m!==filterMonth) return false;
     }
     if(filterEt&&c.et1!==filterEt&&c.et2!==filterEt) return false;
