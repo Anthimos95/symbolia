@@ -240,6 +240,7 @@ textarea{resize:vertical;min-height:70px}
 
 let contracts = [];
 let editIdx = -1;
+let renewSource = -1;
 let currentTab = 'all';
 let sortField = 'date';
 let sortDir = 1;
@@ -387,9 +388,8 @@ function render() {
 
   let list=contracts.filter(c=>{
     const st=getAutoStatus(c);
-    if(currentTab==='all' && (st==='expired'||st==='expiring'||st==='renewed')) return false;
     if(currentTab==='expiring' && st!=='expiring') return false;
-    if(currentTab==='expired' && st!=='expired' && st!=='renewed') return false;
+    if(currentTab==='expired' && st!=='expired') return false;
     if(filterMonth&&c.date){
       let filterDate = c.date;
       if(currentTab==='expiring'||currentTab==='expired') {
@@ -493,7 +493,7 @@ function render() {
 }
 
 function openModal(idx=-1) {
-  editIdx=idx;
+  editIdx=idx; renewSource=-1;
   document.getElementById('modal-title').textContent=idx===-1?'Νέο συμβόλαιο':'Επεξεργασία συμβολαίου';
   const c=idx===-1?{}:contracts[idx];
   document.getElementById('f-date').value=c.date||'';
@@ -514,7 +514,7 @@ function openModal(idx=-1) {
   document.getElementById('modal-bg').classList.add('open');
 }
 
-function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
+function closeModal(){renewSource=-1;document.getElementById('modal-bg').classList.remove('open');}
 
 function saveContract(){
   const c={
@@ -535,6 +535,7 @@ function saveContract(){
   };
   if(editIdx===-1) contracts.push(c);
   else contracts[editIdx]=c;
+  if(renewSource!==-1 && contracts[renewSource]) contracts[renewSource].renewed = true;
   save(); closeModal(); render();
 }
 
@@ -560,9 +561,7 @@ function renewContract(idx) {
   document.getElementById('f-bonus').value = c.bonus||'';
   document.getElementById('f-note').value = c.note||'';
   calcTotal();
-  // Σημειώνουμε το παλιό ως ανανεωμένο
-  contracts[idx].renewed = true;
-  save();
+  renewSource = idx;
   document.getElementById('modal-bg').classList.add('open');
 }
 
