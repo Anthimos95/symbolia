@@ -328,8 +328,12 @@ function dataCompanies(){
 }
 // Δεδομένα + έτοιμη λίστα γνωστών εταιριών (για το autocomplete)
 function companyList(){
-  const out=dataCompanies(), seen=new Set(out.map(nameKey));
-  KNOWN_COMPANIES.forEach(n=>{const k=nameKey(n); if(!seen.has(k)){out.push(n);seen.add(k);}});
+  const out=dataCompanies();
+  const firstWords=new Set(out.map(n=>nameKey(n).split(' ')[0]));
+  KNOWN_COMPANIES.forEach(n=>{
+    const fw=nameKey(n).split(' ')[0];
+    if(!firstWords.has(fw)){out.push(n);firstWords.add(fw);}
+  });
   return out.sort((a,b)=>a.localeCompare(b,'el'));
 }
 // Αν η εταιρία υπάρχει ήδη με άλλη γραφή, κρατάμε την ίδια γραφή (δεν δημιουργούνται διπλές)
