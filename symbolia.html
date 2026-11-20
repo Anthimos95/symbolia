@@ -41,6 +41,7 @@ body{font-family:Arial,sans-serif;font-size:14px;color:#222;background:#f5f5f5;p
 .btn-danger:hover{background:#fff5f5}
 .btn-renew{background:#fff;color:#0066cc;border-color:#0066cc}
 .btn-renew:hover{background:#e8f0fe}
+input.search-box{width:290px;max-width:100%;padding:8px 11px}
 select.filter{padding:7px 10px;border:1px solid #ccc;border-radius:7px;font-size:13px;background:#fff;color:#222}
 .table-wrap{overflow-x:auto;background:#fff;border-radius:10px;border:1px solid #e0e0e0}
 table{width:100%;border-collapse:collapse;min-width:950px}
@@ -128,6 +129,7 @@ textarea{resize:vertical;min-height:70px}
       <select class="filter" id="filter-etairia" onchange="render()">
         <option value="">Όλες οι εταιρίες</option>
       </select>
+      <input type="search" id="search-box" class="search-box" placeholder="🔍 Αναζήτηση: όνομα ή αρ. κυκλοφορίας" oninput="render()" autocomplete="off">
     </div>
     <div class="toolbar-right">
       <button class="btn btn-success" onclick="exportData()">💾 Εξαγωγή backup</button>
@@ -135,6 +137,8 @@ textarea{resize:vertical;min-height:70px}
       <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)">
     </div>
   </div>
+
+  <div id="search-info" style="display:none;margin-bottom:10px;padding:9px 14px;background:#eff6ff;border:1px solid #3b82f6;border-radius:8px;color:#1e3a8a;font-size:13px;font-weight:600"></div>
 
   <div class="table-wrap">
     <table>
@@ -184,7 +188,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="form-row full">
         <div><label>Εταιρία</label>
           <div class="autocomplete-wrap">
-            <input type="text" id="f-et1" placeholder="πχ. INTERAMERICAN" oninput="showAuto('f-et1','auto1')" autocomplete="off">
+            <input type="text" id="f-et1" placeholder="πχ. INTERAMERICAN" oninput="showAuto('f-et1','auto1')" onfocus="showAuto('f-et1','auto1')" onclick="showAuto('f-et1','auto1')" autocomplete="off">
             <div class="autocomplete-list" id="auto1" style="display:none"></div>
           </div>
         </div>
@@ -200,7 +204,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="form-row full">
         <div><label>Εταιρία</label>
           <div class="autocomplete-wrap">
-            <input type="text" id="f-et2" placeholder="πχ. ΑΛΦΑ" oninput="showAuto('f-et2','auto2')" autocomplete="off">
+            <input type="text" id="f-et2" placeholder="πχ. ΑΛΦΑ" oninput="showAuto('f-et2','auto2')" onfocus="showAuto('f-et2','auto2')" onclick="showAuto('f-et2','auto2')" autocomplete="off">
             <div class="autocomplete-list" id="auto2" style="display:none"></div>
           </div>
         </div>
@@ -278,19 +282,81 @@ function importData(event) {
   reader.readAsText(file); event.target.value = '';
 }
 
-function getEtairies() {
-  const s = new Set();
-  contracts.forEach(c => { if(c.et1) s.add(c.et1); if(c.et2) s.add(c.et2); });
-  return [...s].sort();
+// ==HELPERS==
+const GR_PHONETIC={'α':'a','β':'v','γ':'g','δ':'d','ε':'e','ζ':'z','η':'i','θ':'th','ι':'i','κ':'k','λ':'l','μ':'m','ν':'n','ξ':'x','ο':'o','π':'p','ρ':'r','σ':'s','ς':'s','τ':'t','υ':'i','φ':'f','χ':'ch','ψ':'ps','ω':'o'};
+const GR_LOOKALIKE={'α':'a','β':'b','ε':'e','ζ':'z','η':'h','ι':'i','κ':'k','μ':'m','ν':'n','ο':'o','ρ':'p','τ':'t','υ':'y','χ':'x'};
+const KNOWN_COMPANIES=['INTERAMERICAN','INTERLIFE','ΑΤΛΑΝΤΙΚΗ ΕΝΩΣΗ','ΕΘΝΙΚΗ ΑΣΦΑΛΙΣΤΙΚΗ','ΕΥΡΩΠΑΪΚΗ ΠΙΣΤΗ','GENERALI','ALLIANZ','ERGO','ΕΛΠΑ','GROUPAMA ΦΟΙΝΙΞ'];
+
+function stripAccents(s){
+  return String(s==null?'':s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 }
+// "Φωνητικό κλειδί": ελληνικά και αγγλικά καταλήγουν στα ίδια γράμματα (ιντερ = inter)
+function nameKey(s){
+  let t=stripAccents(s).replace(/ου/g,'u').replace(/ευ/g,'ev').replace(/αυ/g,'av');
+  t=t.replace(/[α-ω]/g,ch=>GR_PHONETIC[ch]||ch);
+  t=t.replace(/y/g,'i').replace(/ph/g,'f').replace(/ou/g,'u').replace(/eu/g,'ev').replace(/au/g,'av').replace(/c/g,'k');
+  t=t.replace(/[^a-z0-9 ]/g,'').replace(/(.)\1+/g,'$1').replace(/\s+/g,' ').trim();
+  return t;
+}
+// Κλειδί για πινακίδες: ελληνικά γράμματα που μοιάζουν με λατινικά (ΑΒΕ = ABE)
+function lookKey(s){
+  return stripAccents(s).replace(/[α-ω]/g,ch=>GR_LOOKALIKE[ch]||GR_PHONETIC[ch]||ch).replace(/[^a-z0-9]/g,'');
+}
+function matchesSearch(c,q){
+  const tokens=String(q).trim().split(/\s+/).filter(Boolean);
+  if(!tokens.length) return true;
+  const fields=[c.pelatis,c.eid];
+  const nk=fields.map(nameKey).join(' | ');
+  const lk=fields.map(lookKey).join('|');
+  return tokens.every(t=>{
+    const a=nameKey(t), b=lookKey(t);
+    return (a && nk.includes(a)) || (b && lk.includes(b));
+  });
+}
+// Εταιρίες από τα δεδομένα, μία φορά η καθεμία (ό,τι κεφαλαία/τόνους/κενά κι αν έχουν)
+function dataCompanies(){
+  const groups={};
+  contracts.forEach(c=>[c.et1,c.et2].forEach(n=>{
+    const t=String(n||'').trim(); if(!t) return;
+    const k=nameKey(t); if(!k) return;
+    const g=groups[k]=groups[k]||{}; g[t]=(g[t]||0)+1;
+  }));
+  return Object.keys(groups).map(k=>{
+    const g=groups[k];
+    return Object.keys(g).sort((a,b)=>g[b]-g[a]||((b===b.toUpperCase())-(a===a.toUpperCase()))||a.localeCompare(b))[0];
+  }).sort((a,b)=>a.localeCompare(b,'el'));
+}
+// Δεδομένα + έτοιμη λίστα γνωστών εταιριών (για το autocomplete)
+function companyList(){
+  const out=dataCompanies(), seen=new Set(out.map(nameKey));
+  KNOWN_COMPANIES.forEach(n=>{const k=nameKey(n); if(!seen.has(k)){out.push(n);seen.add(k);}});
+  return out.sort((a,b)=>a.localeCompare(b,'el'));
+}
+// Αν η εταιρία υπάρχει ήδη με άλλη γραφή, κρατάμε την ίδια γραφή (δεν δημιουργούνται διπλές)
+function canonicalCompany(name){
+  const t=String(name||'').trim(); if(!t) return '';
+  const k=nameKey(t);
+  const hit=companyList().find(n=>nameKey(n)===k);
+  return hit||t;
+}
+// ==/HELPERS==
 
 function showAuto(inputId, listId) {
-  const val = document.getElementById(inputId).value.trim().toLowerCase();
-  const list = document.getElementById(listId);
-  const filtered = val ? getEtairies().filter(e => e.toLowerCase().includes(val)) : getEtairies();
-  if(!filtered.length || !val) { list.style.display='none'; return; }
-  list.innerHTML = filtered.map(e => `<div class="autocomplete-item" onclick="selectAuto('${inputId}','${listId}','${e}')">${e}</div>`).join('');
-  list.style.display = 'block';
+  const val=document.getElementById(inputId).value;
+  const list=document.getElementById(listId);
+  const qk=nameKey(val);
+  let items=companyList().filter(n=>!qk||nameKey(n).includes(qk));
+  if(qk) items.sort((a,b)=>(nameKey(b).startsWith(qk)?1:0)-(nameKey(a).startsWith(qk)?1:0));
+  list.innerHTML='';
+  if(!items.length){ list.style.display='none'; return; }
+  items.forEach(n=>{
+    const d=document.createElement('div');
+    d.className='autocomplete-item';
+    d.textContent=n;
+    d.onclick=()=>selectAuto(inputId,listId,n);
+    list.appendChild(d);
+  });
+  list.style.display='block';
 }
 
 function selectAuto(inputId, listId, val) {
@@ -360,14 +426,13 @@ function sortBy(field) {
 }
 
 function updateFilters() {
-  const months=new Set(), etairies=new Set();
+  const months=new Set();
   contracts.forEach(c=>{
     if(c.date){
       const st=getAutoStatus(c);
       let mDate = new Date(c.date);
       if((currentTab==='expiring'||currentTab==='expired')&&getExpiry(c.date,c.dur)) mDate=getExpiry(c.date,c.dur);
       months.add(`${mDate.getFullYear()}-${String(mDate.getMonth()+1).padStart(2,'0')}`);}
-    if(c.et1) etairies.add(c.et1); if(c.et2) etairies.add(c.et2);
   });
   const msel=document.getElementById('filter-month'), curM=msel.value;
   msel.innerHTML='<option value="">Όλοι οι μήνες</option>';
@@ -378,15 +443,22 @@ function updateFilters() {
   });
   const esel=document.getElementById('filter-etairia'), curE=esel.value;
   esel.innerHTML='<option value="">Όλες οι εταιρίες</option>';
-  [...etairies].sort().forEach(e=>{esel.innerHTML+=`<option value="${e}" ${curE===e?'selected':''}>${e}</option>`;});
+  dataCompanies().forEach(e=>{
+    const o=document.createElement('option'); o.value=e; o.textContent=e;
+    if(nameKey(curE)===nameKey(e)) o.selected=true;
+    esel.appendChild(o);
+  });
 }
 
 function render() {
   updateFilters();
   const filterMonth=document.getElementById('filter-month').value;
   const filterEt=document.getElementById('filter-etairia').value;
+  const q=document.getElementById('search-box').value.trim();
+  const searching=q.length>0;
 
   let list=contracts.filter(c=>{
+    if(searching) return matchesSearch(c,q);
     const st=getAutoStatus(c);
     if(currentTab==='expiring' && st!=='expiring') return false;
     if(currentTab==='expired' && st!=='expired') return false;
@@ -400,7 +472,7 @@ function render() {
       const m=`${fd.getFullYear()}-${String(fd.getMonth()+1).padStart(2,'0')}`;
       if(m!==filterMonth) return false;
     }
-    if(filterEt&&c.et1!==filterEt&&c.et2!==filterEt) return false;
+    if(filterEt&&nameKey(c.et1)!==nameKey(filterEt)&&nameKey(c.et2)!==nameKey(filterEt)) return false;
     return true;
   });
 
@@ -419,7 +491,7 @@ function render() {
 
   // Month stats
   const monthBox=document.getElementById('month-stats-box');
-  if(filterMonth){
+  if(filterMonth&&!searching){
     monthBox.style.display='block';
     const [y,mo]=filterMonth.split('-');
     const label=new Date(y,mo-1,1).toLocaleDateString('el-GR',{month:'long',year:'numeric'});
@@ -430,6 +502,12 @@ function render() {
     document.getElementById('ms-pelates').textContent=list.reduce((s,c)=>s+(parseFloat(c.m1)||0)+(parseFloat(c.m2)||0)+(parseFloat(c.bonus)||0),0).toFixed(2)+' €';
     document.getElementById('ms-bonus').textContent=list.reduce((s,c)=>s+(parseFloat(c.bonus)||0),0).toFixed(2)+' €';
   } else { monthBox.style.display='none'; }
+
+  const info=document.getElementById('search-info');
+  if(searching){
+    info.style.display='block';
+    info.textContent=`🔍 Βρέθηκαν ${list.length} για «${q}» — αναζήτηση σε όλα τα συμβόλαια, όλες τις καρτέλες και όλους τους μήνες`;
+  } else { info.style.display='none'; }
 
   const expCount=contracts.filter(c=>getAutoStatus(c)==='expiring').length;
   const badge=document.getElementById('expiring-badge');
@@ -522,11 +600,11 @@ function saveContract(){
     dur:parseInt(document.getElementById('f-dur').value),
     eid:document.getElementById('f-eid').value,
     pelatis:document.getElementById('f-pelatis').value,
-    et1:document.getElementById('f-et1').value,
+    et1:canonicalCompany(document.getElementById('f-et1').value),
     k1:document.getElementById('f-k1').value,
     p1:document.getElementById('f-p1').value,
     m1:document.getElementById('f-m1').value,
-    et2:document.getElementById('f-et2').value,
+    et2:canonicalCompany(document.getElementById('f-et2').value),
     k2:document.getElementById('f-k2').value,
     p2:document.getElementById('f-p2').value,
     m2:document.getElementById('f-m2').value,
